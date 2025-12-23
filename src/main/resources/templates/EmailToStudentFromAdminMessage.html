@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Refund Processed for Your Course (' + ${courseName} + ')'"></title>
+    <style>
+        /* Inline CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row" style="text-align: center">
+        <img src="https://aethenos.com/assets/images/logo/Header_Athenos_logo.png" style="width: 200px"/>
+    </div>
+    <br/>
+    <h1>Refund Processed for Your Course (<span
+            th:text="${courseName}"></span>)</h1>
+    <p>Dear <span class="fs-5"
+                  th:text="${studentName}"></span>,</p>
+
+    <p>We are writing to confirm that your refund request for the course titled "<b><span
+            th:text="${courseName}"></span></b>" has been
+        successfully processed. The amount of <b><span
+                th:text="${refundAmount}"></span></b> has been transferred to your <span
+                th:text="${accountType}"></span>
+        account. </p>
+
+
+    <p>Best regards,<br> The Aethenos Team</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Custom email</title>
+    <style>
+        /* Inline CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row" style="text-align: center">
+        <img src="https://aethenos.com/assets/images/logo/Header_Athenos_logo.png" style="width: 200px"/>
+    </div>
+    <br/>
+    <h1>Hello</h1>
+    <p>A new form ha been submitted on your website. Details below.</p>
+
+    <p>Email <br/><b><span
+            th:text="${email}"></span></b></p>
+    <p>Name <br/><b><span
+            th:text="${name}"></span></b></p>
+    <p>Message <br/><b><span
+            th:text="${message}"></span></b></p>
+    <p th:if="${whoAreYou != null and !#strings.isEmpty(whoAreYou)}">
+        Are you a Student or an Instructor? <br/><b><span th:text="${whoAreYou}"></span></b>
+    </p>
+</div>
+</body>
+</html>

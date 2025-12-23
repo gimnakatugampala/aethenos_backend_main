@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${subject}"></title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 0 15px;
+        }
+
+        .row {
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+
+        .row1 {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .bg-color-gray {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .fs-5 {
+            font-size: 1.25rem;
+        }
+
+        .fs-5-1 {
+            font-size: 1.00rem;
+        }
+
+        .fw-bolder {
+            font-weight: bold;
+        }
+
+        .mt-3 {
+            margin-top: 1rem;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #dee2e6;
+            padding: .75rem;
+            text-align: left;
+        }
+
+        .table th {
+            background-color: #f2f2f2;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+        }
+
+        .table td {
+            border: none;
+        }
+
+        .offset-8 {
+            margin-left: 66.666667%;
+        }
+
+        .col-4 {
+            flex: 0 0 33.333333%;
+            max-width: 33.333333%;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        hr {
+            border-top: 1px solid #dee2e6;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+
+        .col-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .fw-bold {
+            font-weight: bold;
+        }
+
+        .text-dark {
+            color: #343a40;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+
+            .offset-8 {
+                margin-left: 0;
+            }
+
+            .col-4,
+            .col-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+
+        .offset-2 {
+            margin-left: 16.6666666667%;
+        }
+
+        .ms-3 {
+            margin-left: 1rem !important;
+        }
+
+        @media (min-width: 992px) {
+            .col-lg-6 {
+                flex: 0 0 auto;
+                width: 50%;
+            }
+        }
+
+        .text-end {
+            text-align: right !important;
+        }
+
+        .offset-5 {
+            margin-left: 55%;
+        }
+
+        .col-5 {
+            flex: 0 0 auto;
+            width: 41.6666666667%;
+        }
+
+        .double-underline {
+            text-decoration: underline;
+            text-decoration-style: double;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class=" col-12 col-lg-6 bg-color-gray">
+        <img src="https://aethenos.com/assets/images/logo/Header_Athenos_logo.png" style="width: 200px"/>
+        <div class="row">
+            <div class="col-12">
+                    <span class="fs-6 fw-bolder">Transaction date: <span class="fs-6"
+                                                                         th:text="${transactionDate}"></span></span><br/>
+                <span class="fs-6 fw-bolder">Transaction number: <span class="fs-6"
+                                                                       th:text="${transactionNumber}"></span></span>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th scope="col">Course name</th>
+                        <th scope="col">List price</th>
+                        <th scope="col">Your price</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="courseName, idx : ${courseNames}">
+                        <td class="fs-6" th:text="${courseName}"></td><td class="fs-6" th:text="${listPrices[__${idx.index}__]}"></td><td class="fs-6" th:text="${yourPrices[__${idx.index}__]}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="offset-5 col-5 text-end">
+                <span class="fs-6 fw-bolder">Subtotal: <span th:text="${subTotal}"></span></span><br/>
+                <span class="fs-6 fw-bolder">Tax rate: <span th:text="${taxRate}"></span></span>
+            </div>
+        </div>
+        <hr/>
+        <div class="row text-end">
+            <div class="offset-5 col-5">
+                <span class="fs-6 fw-bolder">Tax: <span th:text="${tax}"></span></span><br/>
+                <span class="fs-5 fw-bolder">Total: <span class="fs-5-1 double-underline"
+                                                          th:text="${total}"></span></span>
+            </div>
+        </div>
+
+        <table class="table mt-3">
+            <tbody>
+            <tr>
+                <td class="fs-6">
+                    <span class="fs-5 fw-bolder" style="padding-right: 80px;">Purchased by</span>
+                    <hr/>
+                </td>
+                <td class="fs-6">
+                    <span class="fs-5 fw-bolder">Sold by </span>
+                    <hr/>
+                </td>
+            </tr>
+            <tr>
+                <td style="position: absolute;">
+                    <span class="fs-6 fw-bold" th:text="${purchasedBy}"></span>
+                </td>
+                <td>
+                    <span class="fs-6">Aethenos</span><br/>
+                    <span>4th Floor, Silverstream House,</br>
+                        45 Fitzroy Street,</br>
+                        London W1T 6EB,</br>
+                        United Kingdom</span>
+                </td>
+            </tr>
+
+            </tbody>
+        </table>
+
+        <div class="row mt-3">
+            <span class="fw-bolder">Payment<br/>method: <span th:text="${paymentMethod}"></span></span>
+        </div>
+        <div class="row mt-5 mb-5">
+            <div class="col-6">
+                <span class="fs-5 fw-bolder">Need help? </span>
+                <hr/>
+                <span class="fs-6">Visit our <a class="text-dark" href="#">Help Center</a> for support.</span>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

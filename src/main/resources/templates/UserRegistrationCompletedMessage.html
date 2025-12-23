@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Registration Completed</title>
+  <style>
+    /* Inline CSS */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    p {
+      color: #666;
+      line-height: 1.6;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #e41c28;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+
+    .button:hover {
+      background-color: #d02731;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="row" style="text-align: center">
+    <img src="https://aethenos.com/assets/images/logo/Header_Athenos_logo.png" style="width: 200px"/>
+  </div>
+  <br/>
+  <h1>User Registration Completed</h1>
+  <p>Dear <span class="fs-5"
+               th:text="${userName}"></span>,</p>
+  <p>Thank you for joining Aethenos</p>
+  <p>Your registration has been successfully completed. Welcome to our community!</p>
+  <p>Feel free to explore our platform and start enjoying our courses.</p>
+  <p>If you have any questions or need assistance, don't hesitate to contact us.</p>
+  <p>Best regards,<br> The Aethenos Team</p>
+  <a href="https://aethenos.com/" style="display: inline-block; padding: 10px 20px; background-color: #e41c28; color: #fff; text-decoration: none; border-radius: 5px;">Visit Aethenos</a>
+</div>
+</body>
+</html>

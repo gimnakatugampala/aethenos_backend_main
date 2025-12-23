@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Course Approval</title>
+    <style>
+        /* Inline CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #000000;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .button:hover {
+            background-color: #3a3a3a;
+        }
+        .text-puple{
+            color: #a472e5;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <img src="https://aethenos.com/assets/images/logo/Header_Athenos_logo.png" style="width: 200px"/>
+    <hr style="font-size: 10px;color: #666666"/>
+    <p>Hi <span class="fs-5"
+                th:text="${userName}"></span>,</p>
+    <p class="fs-5">Congratulations. you unlocked your certificate of completion for <span class="fs-5 text-puple"
+                                                                                           th:text="${courseTitle}"></span>
+    </p>
+
+</div>
+
+</body>
+</html>

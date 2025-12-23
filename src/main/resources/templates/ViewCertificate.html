@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate</title>
+    <link rel="stylesheet" href="/static/css/main.css" th:href="@{classpath:/static/css/main.css}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row bg-light rounded-3">
+        <div class="col-3">
+            <img src="/static/images/Athenos_logo.png" th:src="@{classpath:/static/images/Athenos_logo.png}"
+                 class="img-fluid" alt="Athenos logo"/>
+        </div>
+        <div class="col-9 text-end">
+            <span class="text-secondary" style="font-size: 13px">Certificate no: <span
+                    th:text="${certificateCode}"></span></span>
+        </div>
+
+        <div class="col-12 mt-5 courseDiv pt-3">
+            <span class="fw-bold fs-7 text-secondary opacity-75">CERTIFICATE OF COMPLETION</span>
+            <br/>
+            <span class="display-1 fw-bold"
+                  th:text="${courseTitle}"></span>
+            <br/>
+            <span class="fs-6">Instructor(s) <span class="fw-bold fs-6"
+                                                   th:text="${instructor}"></span>
+        </span>
+        </div>
+        <!-- Footer -->
+        <footer class="footer" style="width: 100%; padding: 0px 20px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <!-- Left side -->
+                    <td style="width: 40%; vertical-align: middle;">
+                        <span class="fw-bold display-6" th:text="${userName}"></span><br/>
+                        <span class="fs-6">Date <span class="fw-bold" th:text="${date}"></span></span>
+                    </td>
+
+                    <!-- Right side -->
+                    <td style="width: 60%; text-align: right; vertical-align: middle;" th:if="${logo}">
+                        <img src="/static/images/CPD-certified-highres-trns.png"
+                             th:src="@{classpath:/static/images/CPD-certified-highres-trns.png}"
+                             alt="CPD-certified logo"
+                             style="height: 100px;"/>
+                    </td>
+                </tr>
+            </table>
+        </footer>
+
+
+
+    </div>
+</div>
+</body>
+</html>

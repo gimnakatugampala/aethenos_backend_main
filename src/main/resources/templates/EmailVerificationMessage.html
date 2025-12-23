@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aethenos Email Verification</title>
+    <style>
+        /* Inline CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+        .text-center {
+            text-align: center;
+            color: #FF5733;
+        }
+        .highlight-bg{
+            background-color: #EAEAEA;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row" style="text-align: center">
+        <img src="https://aethenos.com/assets/images/logo/Header_Athenos_logo.png" style="width: 200px"/>
+    </div>
+    <br/>
+    <h1>Aethenos Email Verification</h1>
+    <p>Dear <span class="fs-5" th:text="${userName}"></span>,</p>
+    <p>Welcome to Aethenos! To complete your registration, please verify your email address by entering the verification
+        code below:</p>
+    <h1 class="text-center"><span class="fs-5 highlight-bg" th:text="${verificationCode}"></span></h1>
+
+    <p>Best regards,<br> The Aethenos Team</p>
+</div>
+</body>
+</html>

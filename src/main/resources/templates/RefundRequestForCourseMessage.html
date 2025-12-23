@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Refund Request for Course (' + ${courseName} + ') - ' + ${studentName}"></title>
+    <style>
+        /* Inline CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row" style="text-align: center">
+        <img src="https://aethenos.com/assets/images/logo/Header_Athenos_logo.png" style="width: 200px"/>
+    </div>
+    <br/>
+    <h1>Refund Request for Course (<span
+            th:text="${courseName}"></span>) - <span
+            th:text="${studentName}"></span></h1>
+    <p>Dear <span class="fs-5"
+                  th:text="${adminName}"></span>,</p>
+
+    <p> This is to inform you that a student has requested a refund for the course titled <b>"<span
+            th:text="${courseName}">Test Course</span>"</b>
+        Please find the details of the refund request below: </p>
+
+    <ul>
+        <li><b>Student name: </b><span
+                th:text="${studentName}"></span></li>
+        <li><b>Student email: </b><span
+                th:text="${studentEmail}"></span></li>
+        <li><b>Course name : </b><span
+                th:text="${courseName}"></span></li>
+        <li><b>Purchase date: </b><span
+                th:text="${purchaseDate}"></span></li>
+        <li><b>Reason for refund request: </b><span
+                th:text="${reasonForRefundRequest}"></span></li>
+    </ul>
+
+    <p>
+        Please review the request and initiate the necessary steps for processing the refund if applicable.
+        If you require any additional information or documentation, feel free to contact me.
+    </p>
+
+
+    <p>Best regards,<br> The Aethenos Team</p>
+</div>
+</body>
+</html>

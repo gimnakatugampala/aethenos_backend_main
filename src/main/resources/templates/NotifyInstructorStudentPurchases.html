@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Student Enrollment</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            text-align: center;
+        }
+
+        .logo {
+            width: 100px;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .course-title {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .student-info {
+            margin-top: 10px;
+        }
+
+        .student-name {
+            font-weight: bold;
+        }
+
+        .link {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row" style="text-align: center">
+        <img src="https://aethenos.com/assets/images/logo/Header_Athenos_logo.png" style="width: 200px"/>
+    </div>
+    <br/>
+    <div class="header">
+        <h2>New Student Enrollment Notification</h2>
+    </div>
+    <div class="content">
+        <p>Hi <span class="fs-5" th:text="${InstructorUserName}"></span>,</p>
+        <p>We're happy to inform you that a new student, <span class="fs-5" th:text="${studentName}"></span>, has enrolled in your course, "<span class="fs-5 student-name" th:text="${courseName}"></span>".
+            <span th:if="${isPaidCourse}"> This means you've earned a sale! Congratulations!</span></p>
+
+        <p class="course-title"><span class="fs-5" th:text="${courseName}"></span></p>
+        <p class="student-info">Student Name: <span class="fs-5 student-name" th:text="${studentName}"></span></p>
+        <p>To view the student's enrollment details and manage your course, please visit the instructor dashboard: <a
+                href="instructor.aethenos.com" class="link">Aethenos Instructor Dashboard</a></p>
+        <p>We hope you will continue to create amazing courses that help students to learn and grow.</p>
+        <p>Sincerely,</p>
+        <p>The Aethenos Team</p>
+    </div>
+</div>
+</body>
+</html>

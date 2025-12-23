@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test video disapproved</title>
+    <style>
+        /* Inline CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row" style="text-align: center">
+        <img src="https://aethenos.com/assets/images/logo/Header_Athenos_logo.png" style="width: 200px"/>
+    </div>
+    <br/>
+    <h1>Test video disapproved</h1>
+    <p>Dear <span class="fs-5"
+                  th:text="${userName}"></span>,</p>
+    <p>Your test video for <b><span class="fs-5"
+                                    th:text="${courseTitle}"></span></b> has been disapproved and needs to be resubmitted.</p>
+    <p>Please review the feedback provided below and make necessary updates to your test video before resubmitting for
+        approval.</p>
+    <p><span>Feedback: <b><span class="fs-5"
+                             th:text="${feedback}"></span></b></span></p>
+    <p>If you have any questions or need assistance, feel free to contact our support team.</p>
+    <p>Best regards,<br> The Aethenos Team</p>
+</div>
+</body>
+</html>
