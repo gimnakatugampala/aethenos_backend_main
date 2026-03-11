@@ -1,25 +1,15 @@
 package lk.exon.aethenosapi.config;
 
-import com.sendgrid.SendGrid;
+
 import lk.exon.aethenosapi.entity.Course;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.Resource;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.spring5.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
-
-
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -88,7 +78,6 @@ public class EmailConfig {
 
         properties.setProperty("InstructorUserName", InstructorUserName);
         properties.setProperty("studentName", studentName);
-//        String combinedCourseNames = String.join(", ", courseNames);
         String combinedCourseNames = courses.stream()
                 .map(Course::getCourseTitle)
                 .collect(Collectors.joining(", "));
@@ -115,22 +104,5 @@ public class EmailConfig {
         properties.setProperty("userName", userName);
 
         return properties;
-    }
-
-    @Bean
-    public static ClassLoaderTemplateResolver htmlTemplateResolver() {
-        ClassLoaderTemplateResolver emailTemplateResolver = new ClassLoaderTemplateResolver();
-        emailTemplateResolver.setPrefix("/templates/");
-        emailTemplateResolver.setSuffix(".html");
-        emailTemplateResolver.setTemplateMode(TemplateMode.HTML);
-        emailTemplateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        return emailTemplateResolver;
-    }
-
-    @Bean
-    public static SpringTemplateEngine springTemplateEngine() {
-        SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-        templateEngine.addTemplateResolver(htmlTemplateResolver());
-        return templateEngine;
     }
 }

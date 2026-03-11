@@ -237,9 +237,9 @@ public class RegisterServiceImpl implements RegisterService {
             GeneralUserProfileResponse generalUserProfileResponse = new GeneralUserProfileResponse();
 
             Properties properties = EmailConfig.getEmailProperties(generalUserProfile.getFirstName() + " " + generalUserProfile.getLastName(), "User Registration");
-            try {
-                EmailSender emailSender = new EmailSender();
-                emailSender.sendEmail("UserRegistrationCompletedMessage", generalUserProfile.getEmail(), (String) properties.getProperty("from"), (String) properties.get("subject"), properties);
+//            try {
+//                EmailSender emailSender = new EmailSender();
+//                emailSender.sendEmail("UserRegistrationCompletedMessage", generalUserProfile.getEmail(), (String) properties.getProperty("from"), (String) properties.get("subject"), properties);
                 generalUserProfileResponse.setCode(generalUserProfile.getUserCode());
                 generalUserProfileResponse.setToken(token);
 
@@ -255,9 +255,9 @@ public class RegisterServiceImpl implements RegisterService {
                 userLoginToken.setGeneralUserProfile(generalUserProfile);
                 userLoginTokenRepository.save(userLoginToken);
 
-            } catch (MessagingException e) {
-                e.printStackTrace();
-            }
+//            } catch (MessagingException e) {
+//                e.printStackTrace();
+//            }
             generalUserProfileResponse.setMessage("Student profile added successfully");
             generalUserProfileResponse.setVariable(VarList.RSP_SUCCESS);
             return generalUserProfileResponse;

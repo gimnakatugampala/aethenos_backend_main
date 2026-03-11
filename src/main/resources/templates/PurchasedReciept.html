@@ -183,7 +183,9 @@
                     </thead>
                     <tbody>
                     <tr th:each="courseName, idx : ${courseNames}">
-                        <td class="fs-6" th:text="${courseName}"></td><td class="fs-6" th:text="${listPrices[__${idx.index}__]}"></td><td class="fs-6" th:text="${yourPrices[__${idx.index}__]}"></td>
+                        <td class="fs-6" th:text="${courseName}"></td>
+                        <td class="fs-6" th:text="${listPrices[__${idx.index}__]}"></td>
+                        <td class="fs-6" th:text="${yourPrices[__${idx.index}__]}"></td>
                     </tr>
                     </tbody>
                 </table>

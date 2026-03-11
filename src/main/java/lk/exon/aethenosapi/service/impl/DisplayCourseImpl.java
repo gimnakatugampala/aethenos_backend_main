@@ -1915,8 +1915,8 @@ public class DisplayCourseImpl implements DisplayCourseService {
             courseCodes = Arrays.asList(
                     "1afabb42-d9d5-44a1-abf1-9bc4917e5e44",
                     "0769d057-797d-475c-84ba-c11fd6651c04",
-                    "9d93acf7-5543-45fb-9f18-c3e57b5fbe69",
-                    "3eff5c42-dc77-41b5-bd1b-44f46b2ed1ec"
+                    "9d93acf7-5543-45fb-9f18-c3e57b5fbe69"
+//                    "3eff5c42-dc77-41b5-bd1b-44f46b2ed1ec"
 //                    "aacde467-3684-43e1-8ed0-42c1f0247828",
 //                    "4d87412f-1dbe-452d-847e-05dd93fbf8b3",
 //                    "27f74652-e691-45a8-bcb8-24cfaeef4076",

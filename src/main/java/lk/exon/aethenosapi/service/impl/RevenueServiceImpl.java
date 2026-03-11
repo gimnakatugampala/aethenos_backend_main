@@ -1,7 +1,5 @@
 package lk.exon.aethenosapi.service.impl;
 
-//import javafx.util.converter.LocalDateStringConverter;
-
 import lk.exon.aethenosapi.entity.*;
 import lk.exon.aethenosapi.exception.ErrorException;
 import lk.exon.aethenosapi.payload.request.GetInstructorMonthlyRevenueByMonthRequest;
@@ -10,7 +8,6 @@ import lk.exon.aethenosapi.payload.response.*;
 import lk.exon.aethenosapi.repository.*;
 import lk.exon.aethenosapi.service.RevenueService;
 import lk.exon.aethenosapi.utils.VarList;
-import org.bouncycastle.util.StringList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -69,15 +66,10 @@ public class RevenueServiceImpl implements RevenueService {
     private static final String API_URL = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/{currencyCode}.json";
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
     DateTimeFormatter updatedFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     DateTimeFormatter dateUpdatedFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-
-
     DecimalFormat decimalFormat = new DecimalFormat("#,##0.00");
-
     DateTimeFormatter formatter3 = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH);
-
 
     private Map<String, Double> getExchangeRates(String currencyCode) {
         try {
@@ -150,18 +142,14 @@ public class RevenueServiceImpl implements RevenueService {
                     double thisMonthRevenue = 0;
                     for (InstructorCourseRevenue instructorCourseRevenue : instructorCourseRevenues) {
                         if (!instructorCourseRevenue.getRevenue().isRefunded()) {
-                            if (instructorCourseRevenue.getRevenue().getTransaction().getOrder().getPaymentMethod().getId() == 1) {
-                                totalRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getStripe_pf_exchange_rate();
-                            } else {
-                                totalRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
-                            }
+
+                            // Using usdRate for all conversions since raw DB data is in Student Currency
+                            double earning = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
+                            totalRevenue += earning;
+
                             LocalDate createdDate = convertToLocalDate(instructorCourseRevenue.getRevenue().getCreatedDate());
                             if (createdDate != null && !createdDate.isBefore(startOfMonth) && !createdDate.isAfter(endOfMonth)) {
-                                if (instructorCourseRevenue.getRevenue().getTransaction().getOrder().getPaymentMethod().getId() == 1) {
-                                    thisMonthRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getStripe_pf_exchange_rate();
-                                } else {
-                                    thisMonthRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
-                                }
+                                thisMonthRevenue += earning;
                             }
                         }
                     }
@@ -169,7 +157,6 @@ public class RevenueServiceImpl implements RevenueService {
                     GetInstructorRevenueOverviewResponse getInstructorRevenueOverviewResponse = new GetInstructorRevenueOverviewResponse();
                     getInstructorRevenueOverviewResponse.setTotalRevenue(totalRevenue);
                     getInstructorRevenueOverviewResponse.setThisMonthRevenue(thisMonthRevenue);
-
 
                     List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
                     int totalEnrollments = 0;
@@ -203,8 +190,6 @@ public class RevenueServiceImpl implements RevenueService {
 
                             totalEnrollments++;
                         }
-
-
                     }
                     getInstructorRevenueOverviewResponse.setTotalEnrollments(totalEnrollments);
                     getInstructorRevenueOverviewResponse.setThisMonthEnrollments(thisMonthEnrollments);
@@ -228,95 +213,75 @@ public class RevenueServiceImpl implements RevenueService {
         String username = authentication.getName();
         GeneralUserProfile profile = userProfileServiceImpl.getProfile(username);
 
-        if (profile != null) {
-            if (profile.getIsActive() == 1) {
-                InstructorProfile instructorProfile = instructorProfileRepository.getInstructorProfileByGeneralUserProfile(profile);
-
-                if (instructorProfile != null) {
-                    List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
-
-                    // Initialize response object
-                    GetInstructorRevenueReportResponse getInstructorRevenueReportResponse = new GetInstructorRevenueReportResponse();
-                    Map<Month, Double> monthlyEarningsMap = new LinkedHashMap<>(); // Maintain order
-                    double totalLifeTimeEarning = 0;
-
-                    // Iterate over all courses
-                    for (Course course : courses) {
-                        List<OrderHasCourse> orderHasCourses = orderHasCourseRepository.getOrderHasCoursesByCourse(course);
-
-                        // Iterate over all order_has_course records for each course
-                        for (OrderHasCourse orderHasCourse : orderHasCourses) {
-                            Revenue revenue = revenueRepository.getRevenueByOrderHasCourse(orderHasCourse);
-                            if (revenue != null && !revenue.isRefunded()) {
-                                LocalDate createdLocalDate = convertToLocalDateViaInstant(revenue.getCreatedDate());
-                                InstructorCourseRevenue instructorCourseRevenue = instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
-
-                                // Calculate lifetime earning
-                                double earning = 0;
-                                if (revenue.getTransaction().getOrder().getPaymentMethod().getId() == 1) {
-                                    earning = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getStripe_pf_exchange_rate();
-                                } else {
-                                    earning = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
-                                }
-                                totalLifeTimeEarning += earning;
-
-                                // Accumulate earnings for the specific month
-                                Month month = createdLocalDate.getMonth();
-                                monthlyEarningsMap.put(month, monthlyEarningsMap.getOrDefault(month, 0.0) + earning);
-                            }
-                        }
-                    }
-
-
-                    // Create the response list from the map
-                    List<InstructorRevenueReportResponse> instructorRevenueReportResponseList = new ArrayList<>();
-                    for (Map.Entry<Month, Double> entry : monthlyEarningsMap.entrySet()) {
-                        Month month = entry.getKey();
-                        double monthTotalEarning = entry.getValue();
-                        LocalDate representativeDate = LocalDate.now();
-                        for (Course course : courses) {
-                            List<OrderHasCourse> orderHasCourses = orderHasCourseRepository.getOrderHasCoursesByCourse(course);
-                            for (OrderHasCourse orderHasCourse : orderHasCourses) {
-                                Revenue revenue = revenueRepository.getRevenueByOrderHasCourse(orderHasCourse);
-                                if (revenue != null && !revenue.isRefunded()) {
-                                    LocalDate createdDate = convertToLocalDateViaInstant(revenue.getCreatedDate());
-                                    if (createdDate.getMonth() == month) {
-                                        representativeDate = createdDate; // Use the first valid date as a representative
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                        InstructorRevenueReportResponse reportResponse = createInstructorRevenueReportResponse(month, monthTotalEarning, representativeDate.withMonth(month.getValue()));
-                        instructorRevenueReportResponseList.add(reportResponse);
-                    }
-
-                    // Sort the list in descending order of months
-                    instructorRevenueReportResponseList.sort((r1, r2) -> {
-                        LocalDate month1 = LocalDate.parse(r1.getMonth() + " 01", DateTimeFormatter.ofPattern("MMMM yyyy dd"));
-                        LocalDate month2 = LocalDate.parse(r2.getMonth() + " 01", DateTimeFormatter.ofPattern("MMMM yyyy dd"));
-                        return month2.compareTo(month1); // Descending order
-                    });
-
-                    // Set response fields
-                    getInstructorRevenueReportResponse.setInstructorRevenueReportResponses(instructorRevenueReportResponseList);
-                    getInstructorRevenueReportResponse.setTotalLifeTimeEarning(decimalFormat.format(totalLifeTimeEarning));
-                    getInstructorRevenueReportResponse.setDate(getToday());
-
-                    return getInstructorRevenueReportResponse;
-
-                } else {
-                    throw new ErrorException("No such profile found", VarList.RSP_NO_DATA_FOUND);
-                }
-            } else {
-                throw new ErrorException("User not active", VarList.RSP_NO_DATA_FOUND);
-            }
-        } else {
+        if (profile == null) {
             throw new ErrorException("User not found", VarList.RSP_NO_DATA_FOUND);
         }
-    }
 
+        if (profile.getIsActive() != 1) {
+            throw new ErrorException("User not active", VarList.RSP_NO_DATA_FOUND);
+        }
+
+        InstructorProfile instructorProfile = instructorProfileRepository.getInstructorProfileByGeneralUserProfile(profile);
+
+        if (instructorProfile != null) {
+            List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
+
+            GetInstructorRevenueReportResponse getInstructorRevenueReportResponse = new GetInstructorRevenueReportResponse();
+
+            Map<YearMonth, Double> monthlyEarningsMap = new LinkedHashMap<>();
+            Map<YearMonth, LocalDate> representativeDateMap = new HashMap<>();
+            double totalLifeTimeEarning = 0;
+
+            for (Course course : courses) {
+                List<OrderHasCourse> orderHasCourses = orderHasCourseRepository.getOrderHasCoursesByCourse(course);
+
+                for (OrderHasCourse orderHasCourse : orderHasCourses) {
+                    Revenue revenue = revenueRepository.getRevenueByOrderHasCourse(orderHasCourse);
+                    if (revenue != null && !revenue.isRefunded()) {
+                        LocalDate createdLocalDate = convertToLocalDateViaInstant(revenue.getCreatedDate());
+                        InstructorCourseRevenue instructorCourseRevenue = instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
+
+                        // Using usdRate for conversion
+                        double earning = instructorCourseRevenue.getInstructorShare() * revenue.getTransaction().getUsdRate();
+                        totalLifeTimeEarning += earning;
+
+                        YearMonth ym = YearMonth.from(createdLocalDate);
+                        monthlyEarningsMap.put(ym, monthlyEarningsMap.getOrDefault(ym, 0.0) + earning);
+                        representativeDateMap.putIfAbsent(ym, createdLocalDate);
+                    }
+                }
+            }
+
+            List<InstructorRevenueReportResponse> instructorRevenueReportResponseList = new ArrayList<>();
+            for (Map.Entry<YearMonth, Double> entry : monthlyEarningsMap.entrySet()) {
+                YearMonth ym = entry.getKey();
+                double monthTotalEarning = entry.getValue();
+                LocalDate representativeDate = representativeDateMap.get(ym);
+
+                InstructorRevenueReportResponse reportResponse = createInstructorRevenueReportResponse(
+                        ym.getMonth(),
+                        monthTotalEarning,
+                        representativeDate
+                );
+
+                instructorRevenueReportResponseList.add(reportResponse);
+            }
+
+            instructorRevenueReportResponseList.sort((r1, r2) -> {
+                LocalDate d1 = LocalDate.parse(r1.getMonth() + " 01", DateTimeFormatter.ofPattern("MMMM yyyy dd", Locale.ENGLISH));
+                LocalDate d2 = LocalDate.parse(r2.getMonth() + " 01", DateTimeFormatter.ofPattern("MMMM yyyy dd", Locale.ENGLISH));
+                return d2.compareTo(d1);
+            });
+
+            getInstructorRevenueReportResponse.setInstructorRevenueReportResponses(instructorRevenueReportResponseList);
+            getInstructorRevenueReportResponse.setTotalLifeTimeEarning("USD " + decimalFormat.format(totalLifeTimeEarning));
+            getInstructorRevenueReportResponse.setDate(getToday());
+
+            return getInstructorRevenueReportResponse;
+        } else {
+            throw new ErrorException("No such profile found", VarList.RSP_NO_DATA_FOUND);
+        }
+    }
 
     private InstructorRevenueReportResponse createInstructorRevenueReportResponse(Month month, double monthTotalEarning, LocalDate createdDate) {
         InstructorRevenueReportResponse instructorRevenueReportResponse = new InstructorRevenueReportResponse();
@@ -325,7 +290,10 @@ public class RevenueServiceImpl implements RevenueService {
         instructorRevenueReportResponse.setId(month.getValue());
         instructorRevenueReportResponse.setMonth(monthYear);
         instructorRevenueReportResponse.setYourRevenue(decimalFormat.format(monthTotalEarning));
-        instructorRevenueReportResponse.setExpectedPaymentDate(createdDate.withDayOfMonth(7).plusMonths(2).format(updatedFormatter));
+
+        instructorRevenueReportResponse.setExpectedPaymentDate(
+                createdDate.withDayOfMonth(1).plusMonths(2).withDayOfMonth(7).format(updatedFormatter)
+        );
 
         return instructorRevenueReportResponse;
     }
@@ -395,12 +363,9 @@ public class RevenueServiceImpl implements RevenueService {
                                     refundResponse.setDate(refunds.getRequestDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().format(updatedFormatter));
                                     refundResponse.setCustomerName(refunds.getGeneralUserProfile().getFirstName() + " " + refunds.getGeneralUserProfile().getLastName());
                                     refundResponse.setCourse(refunds.getOrderHasCourse().getCourse().getCourseTitle());
-                                    double refundAmount = 0;
-                                    if (revenue.getTransaction().getOrder().getPaymentMethod().getId() == 1) {
-                                        refundAmount = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getStripe_pf_exchange_rate();
-                                    } else {
-                                        refundAmount = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
-                                    }
+
+                                    double refundAmount = instructorCourseRevenue.getInstructorShare() * revenue.getTransaction().getUsdRate();
+
                                     refundResponse.setRefundsAmount("USD " + decimalFormat.format(refundAmount));
                                     refundResponse.setChangeToYourRevenue("-" + "USD " + decimalFormat.format(refundAmount));
                                     monthlyRefunds.add(refundResponse);
@@ -408,30 +373,56 @@ public class RevenueServiceImpl implements RevenueService {
                                 }
                             }
 
-//                            if (!revenue.isRefunded()) {
                             GetInstructorMonthlyRevenueExpandedReportResponse revenueResponse = new GetInstructorMonthlyRevenueExpandedReportResponse();
                             revenueResponse.setDate(revenue.getCreatedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().format(dateUpdatedFormatter));
                             revenueResponse.setCourse(revenue.getOrderHasCourse().getCourse().getCourseTitle());
-                            double pricePaid = 0;
-                            double paymentProcessingFees = 0;
-                            double tax = 0;
-                            double netRevenue = 0;
-                            if (revenue.getTransaction().getOrder().getPaymentMethod().getId() == 1) {
-                                pricePaid = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getStripe_pf_exchange_rate();
-                                paymentProcessingFees = revenue.getProcessingFee() * instructorCourseRevenue.getRevenue().getTransaction().getStripe_pf_exchange_rate();
-                                tax = revenue.getTax() * instructorCourseRevenue.getRevenue().getTransaction().getStripe_pf_exchange_rate();
-                                netRevenue = revenue.getNetSale() * revenue.getTransaction().getStripe_pf_exchange_rate();
-                            } else {
-                                pricePaid = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
-                                paymentProcessingFees = revenue.getProcessingFee() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
-                                tax = revenue.getTax() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
-                                netRevenue = revenue.getNetSale() * revenue.getTransaction().getUsdRate();
-                            }
-                            revenueResponse.setPricePaid(revenue.getOrderHasCourse().getCurrrency() + " " + decimalFormat.format(revenue.getOrderHasCourse().getItemPrice()));
 
+                            double exRate = revenue.getTransaction().getUsdRate();
+                            double pricePaid = instructorCourseRevenue.getInstructorShare() * exRate;
+
+
+                            String stripeCurrency = revenue.getTransaction().getStripe_pf_currency();
+                            double rawFeeInDb = revenue.getProcessingFee();
+                            double stripeRate = revenue.getTransaction().getStripe_pf_exchange_rate();
+
+//                            System.out.println("--- TRANSACTION DEBUG ---");
+//                            System.out.println("Raw Processing Fee in DB: " + rawFeeInDb);
+//                            System.out.println("USD Rate (exRate): " + exRate);
+//                            System.out.println("Stripe PF Currency: " + stripeCurrency);
+//                            System.out.println("Stripe PF Exchange Rate: " + stripeRate);
+//                            System.out.println("-------------------------");
+
+// --- BULLETPROOF PROCESSING FEE LOGIC ---
+                            double paymentProcessingFees = 0.0;
+
+
+// 1. Safely check if currency is GBP (using .trim() to remove accidental spaces like "gbp ")
+                            boolean isGBP = stripeCurrency != null && stripeCurrency.trim().equalsIgnoreCase("gbp");
+
+// 2. Safely check if USD rate is 1
+                            boolean isUsdRateOne = Math.abs(exRate - 1.0) < 0.001;
+
+// Rule 1: If usd_rate == 1 AND currency == "gbp"
+                            if (isUsdRateOne && isGBP) {
+                                paymentProcessingFees = revenue.getProcessingFee() * revenue.getTransaction().getStripe_pf_exchange_rate();
+                            }
+// Rule 2 & 3: If currency is null, OR usd_rate is not 1
+                            else {
+                                paymentProcessingFees = revenue.getProcessingFee() * exRate;
+                            }
+// ----------------------------------------
+
+                            double tax = revenue.getTax() * exRate;
+                            double netRevenue = revenue.getNetSale() * exRate;
+
+                            revenueResponse.setPricePaid(revenue.getOrderHasCourse().getCurrrency() + " " + decimalFormat.format(revenue.getOrderHasCourse().getItemPrice()));
                             revenueResponse.setPaymentProcessingFees("USD " + decimalFormat.format(paymentProcessingFees));
+                            revenueResponse.setTax("USD " + decimalFormat.format(tax));
+                            revenueResponse.setNetRevenue("USD " + decimalFormat.format(netRevenue));
+
                             revenueResponse.setAppleOrGoogleFees(decimalFormat.format(0));
                             revenueResponse.setCustomerName(revenue.getOrderHasCourse().getOrder().getGeneralUserProfile().getFirstName() + " " + revenue.getOrderHasCourse().getOrder().getGeneralUserProfile().getLastName());
+
                             String couponCode = "N/A";
                             if (revenue.getOrderHasCourse().getCoursePurchaseType() != null && revenue.getOrderHasCourse().getCoursePurchaseType().getId() == 3) {
                                 StudentBuyCouponCourse studentBuyCouponCourse = studentBuyCouponCourseRepository.getStudentBuyCouponCourseByOrderHasCourse(orderHasCourse);
@@ -444,8 +435,6 @@ public class RevenueServiceImpl implements RevenueService {
                             revenueResponse.setCouponCode(couponCode);
                             revenueResponse.setPlatform("Web");
 
-                            revenueResponse.setTax("USD " + decimalFormat.format(tax));
-                            revenueResponse.setNetRevenue("USD " + decimalFormat.format(netRevenue));
                             String percentageSplit = "0";
                             if (revenue.getOrderHasCourse().getCoursePurchaseType() != null) {
                                 int purchaseTypeId = revenue.getOrderHasCourse().getCoursePurchaseType().getId();
@@ -459,14 +448,12 @@ public class RevenueServiceImpl implements RevenueService {
                             revenueResponse.setChannel(revenue.getOrderHasCourse().getCoursePurchaseType().getPurchaseType());
                             totalPurchases += pricePaid;
                             monthlyRevenueReports.add(revenueResponse);
-//                            }
                         }
                     }
                 }
             }
         }
 
-        // Sort the revenue reports and refunds
         try {
             monthlyRevenueReports.sort(Comparator.comparing((GetInstructorMonthlyRevenueExpandedReportResponse r) ->
                             LocalDateTime.parse(r.getDate(), dateUpdatedFormatter))
@@ -478,7 +465,6 @@ public class RevenueServiceImpl implements RevenueService {
         } catch (DateTimeParseException e) {
             throw new ErrorException("Invalid date format in revenue or refund response", VarList.RSP_ERROR);
         }
-
 
         InstructorMonthlyRevenueReportResponse response = new InstructorMonthlyRevenueReportResponse();
         response.setPurchases(monthlyRevenueReports);
@@ -496,7 +482,6 @@ public class RevenueServiceImpl implements RevenueService {
     }
 
     private LocalDate parseMonthYearToLocalDate(String monthYear) {
-        // Split the input string into month and year
         String[] parts = monthYear.split(" ");
         if (parts.length != 2) {
             throw new IllegalArgumentException("Input must be in 'Month Year' format");
@@ -526,7 +511,6 @@ public class RevenueServiceImpl implements RevenueService {
         String username = authentication.getName();
         GeneralUserProfile profile = userProfileServiceImpl.getProfile(username);
 
-        // Verify if user exists, is active, and is an administrator
         if (profile == null) {
             throw new ErrorException("User not found", VarList.RSP_NO_DATA_FOUND);
         }
@@ -537,23 +521,18 @@ public class RevenueServiceImpl implements RevenueService {
             throw new ErrorException("You cannot access it because you are not an administrator", VarList.RSP_NO_DATA_FOUND);
         }
 
-        // Retrieve all verified and completed instructor profiles
         List<InstructorProfile> instructorProfiles = instructorProfileRepository.getInstructorProfileByIsVerifiedAndIsProfileCompleted(Byte.valueOf("1"), Byte.valueOf("1"));
         List<GetAllInstructorsPaypalOrPayoneerDetailsForManagePaymentsResponse> paymentResponses = new ArrayList<>();
         LocalDate twoMonthsAgo = LocalDate.now().minusMonths(2);
 
-        // Iterate through each instructor profile
         for (InstructorProfile instructorProfile : instructorProfiles) {
             List<InstructorCourseRevenue> instructorCourseRevenues = instructorCourseRevenueRepository.getInstructorCourseRevenueByInstructorProfile(instructorProfile);
             double totalRevenue = 0;
 
-            // Check each revenue record for the instructor
             for (InstructorCourseRevenue instructorCourseRevenue : instructorCourseRevenues) {
                 LocalDate revenueLocalDate = convertToLocalDate(instructorCourseRevenue.getRevenue().getCreatedDate());
 
-                // Check if the revenue is within the last two months or earlier
                 if (YearMonth.from(revenueLocalDate).equals(YearMonth.from(twoMonthsAgo))) {
-                    // Check for valid payment method (PayPal or Payoneer)
                     InstructorPayments instructorPayments = instructorPaymentsRepository.getInstructorPaymentsByInstructorProfile(instructorProfile);
                     if (instructorPayments != null && (instructorPayments.getPaymentMethod().getId() == 2 || instructorPayments.getPaymentMethod().getId() == 4)) {
                         totalRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
@@ -561,7 +540,6 @@ public class RevenueServiceImpl implements RevenueService {
                 }
             }
 
-            // If there is any unpaid revenue, prepare the response
             if (totalRevenue > 0) {
                 InstructorPayments instructorPayments = instructorPaymentsRepository.getInstructorPaymentsByInstructorProfile(instructorProfile);
                 if (instructorPayments != null) {
@@ -569,7 +547,6 @@ public class RevenueServiceImpl implements RevenueService {
                     response.setInstructorName(instructorProfile.getGeneralUserProfile().getFirstName() + " " + instructorProfile.getGeneralUserProfile().getLastName());
                     response.setAccountType(instructorPayments.getPaymentMethod().getMethod());
 
-                    // Set PayPal or Payoneer details based on the payment method
                     if (instructorPayments.getPaymentMethod().getId() == 4) { // Payoneer
                         response.setUserName(instructorPayments.getPayoneerUserName());
                         response.setEmail(instructorPayments.getPayoneerEmail());
@@ -587,7 +564,6 @@ public class RevenueServiceImpl implements RevenueService {
             }
         }
 
-        // Return the list of instructor payment details
         return paymentResponses;
     }
 
@@ -598,7 +574,6 @@ public class RevenueServiceImpl implements RevenueService {
         String username = authentication.getName();
         GeneralUserProfile profile = userProfileServiceImpl.getProfile(username);
 
-        // Verify if user exists, is active, and is an administrator
         if (profile == null) {
             throw new ErrorException("User not found", VarList.RSP_NO_DATA_FOUND);
         }
@@ -609,23 +584,18 @@ public class RevenueServiceImpl implements RevenueService {
             throw new ErrorException("You cannot access it because you are not an administrator", VarList.RSP_NO_DATA_FOUND);
         }
 
-        // Retrieve all verified and completed instructor profiles
         List<InstructorProfile> instructorProfiles = instructorProfileRepository.getInstructorProfileByIsVerifiedAndIsProfileCompleted(Byte.valueOf("1"), Byte.valueOf("1"));
         List<GetAllInstructorsUkBankDetailsForManagePaymentsResponse> paymentResponses = new ArrayList<>();
         LocalDate twoMonthsAgo = LocalDate.now().minusMonths(2);
 
-        // Iterate through each instructor profile
         for (InstructorProfile instructorProfile : instructorProfiles) {
             List<InstructorCourseRevenue> instructorCourseRevenues = instructorCourseRevenueRepository.getInstructorCourseRevenueByInstructorProfile(instructorProfile);
             double totalRevenue = 0;
 
-            // Check each revenue record for the instructor
             for (InstructorCourseRevenue instructorCourseRevenue : instructorCourseRevenues) {
                 LocalDate revenueLocalDate = convertToLocalDate(instructorCourseRevenue.getRevenue().getCreatedDate());
 
-                // Check if the revenue is within the last two months or earlier
                 if (YearMonth.from(revenueLocalDate).equals(YearMonth.from(twoMonthsAgo))) {
-                    // Check for valid payment method (PayPal or Payoneer)
                     InstructorPayments instructorPayments = instructorPaymentsRepository.getInstructorPaymentsByInstructorProfile(instructorProfile);
                     if (instructorPayments != null && instructorPayments.getPaymentMethod().getId() == 5) {
                         totalRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
@@ -633,7 +603,6 @@ public class RevenueServiceImpl implements RevenueService {
                 }
             }
 
-            // If there is any unpaid revenue, prepare the response
             if (totalRevenue > 0) {
                 InstructorPayments instructorPayments = instructorPaymentsRepository.getInstructorPaymentsByInstructorProfile(instructorProfile);
                 if (instructorPayments != null) {
@@ -651,7 +620,6 @@ public class RevenueServiceImpl implements RevenueService {
             }
         }
 
-        // Return the list of instructor payment details
         return paymentResponses;
     }
 
@@ -688,12 +656,8 @@ public class RevenueServiceImpl implements RevenueService {
                 LocalDateTime dateTime = LocalDateTime.ofInstant(instructorCourseRevenue.getRevenue().getCreatedDate().toInstant(), ZoneId.systemDefault());
                 int buyYear = dateTime.getYear();
                 int buyMonth = dateTime.getMonthValue();
-                double value = 0;
-                if (instructorCourseRevenue.getRevenue().getTransaction().getOrder().getPaymentMethod().getId() == 1) {
-                    value = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getStripe_pf_exchange_rate();
-                } else {
-                    value = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
-                }
+
+                double value = instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
 
                 if (instructorCourseRevenue.getRevenue().getOrderHasCourse().getCoursePurchaseType() != null && instructorCourseRevenue.getRevenue().getOrderHasCourse().getCoursePurchaseType().getId() == 1) {
                     AmountDataSetsResponse aethenosData = new AmountDataSetsResponse();
@@ -745,46 +709,85 @@ public class RevenueServiceImpl implements RevenueService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         GeneralUserProfile profile = userProfileServiceImpl.getProfile(username);
-        if (profile != null) {
-            if (profile.getIsActive() == 1) {
-                InstructorProfile instructorProfile = instructorProfileRepository.getInstructorProfileByGeneralUserProfile(profile);
-                if (instructorProfile != null) {
 
-
-                    LocalDate today = LocalDate.now();
-                    YearMonth yearMonth = YearMonth.from(today);
-                    int daysInMonth = yearMonth.lengthOfMonth();
-
-                    GetInstructorChartForThisMonthResponse getInstructorChartForThisMonthResponse = new GetInstructorChartForThisMonthResponse();
-
-                    double[] revenue = new double[daysInMonth];
-                    int[] enrollment = new int[daysInMonth];
-                    int[] rating = new int[daysInMonth];
-                    int[] days = new int[daysInMonth];
-
-                    for (int day = 0; day < daysInMonth; day++) {
-                        days[day] = day + 1;
-                        CalculateRevenueAndEnrollmentForThisMonthResponse calculateRevenueAndEnrollmentForThisMonthResponse = calculateRevenueAndEnrollmentForThisMonth(instructorProfile, day + 1);
-                        revenue[day] = calculateRevenueAndEnrollmentForThisMonthResponse.getRevenue();
-                        enrollment[day] = calculateRevenueAndEnrollmentForThisMonthResponse.getEnrollment();
-                        rating[day] = calculateRatingForThisMonth(instructorProfile, day + 1);
-                    }
-
-                    getInstructorChartForThisMonthResponse.setDays(days);
-                    getInstructorChartForThisMonthResponse.setRevenue(revenue);
-                    getInstructorChartForThisMonthResponse.setEnrollment(enrollment);
-                    getInstructorChartForThisMonthResponse.setRating(rating);
-
-                    return getInstructorChartForThisMonthResponse;
-                } else {
-                    throw new ErrorException("No such profile found", VarList.RSP_NO_DATA_FOUND);
-                }
-            } else {
-                throw new ErrorException("User not active", VarList.RSP_NO_DATA_FOUND);
-            }
-        } else {
+        if (profile == null) {
             throw new ErrorException("User not found", VarList.RSP_NO_DATA_FOUND);
         }
+        if (profile.getIsActive() != 1) {
+            throw new ErrorException("User not active", VarList.RSP_NO_DATA_FOUND);
+        }
+
+        InstructorProfile instructorProfile = instructorProfileRepository.getInstructorProfileByGeneralUserProfile(profile);
+        if (instructorProfile == null) {
+            throw new ErrorException("No such profile found", VarList.RSP_NO_DATA_FOUND);
+        }
+
+        LocalDate today = LocalDate.now();
+        YearMonth yearMonth = YearMonth.from(today);
+        int daysInMonth = yearMonth.lengthOfMonth();
+
+        // Arrays to hold our daily data
+        double[] revenue = new double[daysInMonth];
+        int[] enrollment = new int[daysInMonth];
+        int[] rating = new int[daysInMonth];
+        int[] days = new int[daysInMonth];
+
+        // Pre-fill the days array (1 to 31)
+        for (int i = 0; i < daysInMonth; i++) {
+            days[i] = i + 1;
+        }
+
+        // FAST LOGIC: Fetch courses ONCE and iterate ONCE
+        List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
+
+        for (Course course : courses) {
+            List<OrderHasCourse> orderHasCourses = orderHasCourseRepository.getOrderHasCoursesByCourse(course);
+
+            for (OrderHasCourse orderHasCourse : orderHasCourses) {
+
+                // 1. Process Revenue & Enrollment
+                Revenue rev = revenueRepository.getRevenueByOrderHasCourse(orderHasCourse);
+                if (rev != null && !rev.isRefunded()) {
+                    LocalDate revDate = rev.getCreatedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+                    // Only process if the transaction happened this month
+                    if (YearMonth.from(revDate).equals(yearMonth)) {
+                        int dayIndex = revDate.getDayOfMonth() - 1; // Array is 0-indexed (Day 1 goes to index 0)
+
+                        InstructorCourseRevenue icr = instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(rev);
+                        if (icr != null) {
+                            enrollment[dayIndex]++;
+                            double earning = icr.getInstructorShare() * rev.getTransaction().getUsdRate();
+                            revenue[dayIndex] += earning;
+                        }
+                    }
+                }
+
+                // 2. Process Ratings
+                Review review = reviewRepository.getReviewsByOrderHasCourse(orderHasCourse);
+                if (review != null && review.getDate() != null) {
+                    LocalDate ratingDate = review.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+                    if (YearMonth.from(ratingDate).equals(yearMonth)) {
+                        int dayIndex = ratingDate.getDayOfMonth() - 1;
+                        rating[dayIndex]++;
+                    }
+                }
+            }
+        }
+
+        // Optional: Round all revenue values to 2 decimal places to match your dashboard
+        for(int i = 0; i < revenue.length; i++) {
+            revenue[i] = Math.round(revenue[i] * 100.0) / 100.0;
+        }
+
+        GetInstructorChartForThisMonthResponse response = new GetInstructorChartForThisMonthResponse();
+        response.setDays(days);
+        response.setRevenue(revenue);
+        response.setEnrollment(enrollment);
+        response.setRating(rating);
+
+        return response;
     }
 
     @Override
@@ -843,7 +846,7 @@ public class RevenueServiceImpl implements RevenueService {
 
         YearMonth yearMonth;
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy"); // Parse "November 2024"
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
             yearMonth = YearMonth.parse(month, formatter);
         } catch (DateTimeParseException e) {
             throw new ErrorException("Invalid month format. Use 'MMMM yyyy' (e.g., 'November 2024')", VarList.RSP_NO_DATA_FOUND);
@@ -878,10 +881,8 @@ public class RevenueServiceImpl implements RevenueService {
             (InstructorProfile instructorProfile, int day) {
         int totalEnrollments = 0;
         double netRevenue = 0.0;
-        // Get the current year and month
         YearMonth currentYearMonth = YearMonth.now();
 
-        // Create LocalDate for the given day of the current month
         LocalDate targetDate = currentYearMonth.atDay(day);
 
         List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
@@ -895,11 +896,7 @@ public class RevenueServiceImpl implements RevenueService {
                         InstructorCourseRevenue instructorCourseRevenue = instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
                         if (instructorCourseRevenue != null) {
                             totalEnrollments++;
-                            if (revenue.getTransaction().getOrder().getPaymentMethod().getId() == 1) {
-                                netRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getStripe_pf_exchange_rate();
-                            } else {
-                                netRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
-                            }
+                            netRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
                         }
                     }
                 }
@@ -914,10 +911,8 @@ public class RevenueServiceImpl implements RevenueService {
 
     private int calculateRatingForThisMonth(InstructorProfile instructorProfile, int day) {
         int rating = 0;
-        // Get the current year and month
         YearMonth currentYearMonth = YearMonth.now();
 
-        // Create LocalDate for the given day of the current month
         LocalDate targetDate = currentYearMonth.atDay(day);
 
         List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
@@ -944,7 +939,6 @@ public class RevenueServiceImpl implements RevenueService {
         int totalEnrollments = 0;
         double netRevenue = 0.0;
 
-        // Create LocalDate for the given day of the current month
         LocalDate targetDate = yearMonth.atDay(day);
 
         List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
@@ -958,7 +952,7 @@ public class RevenueServiceImpl implements RevenueService {
                         InstructorCourseRevenue instructorCourseRevenue = instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
                         if (instructorCourseRevenue != null) {
                             totalEnrollments++;
-                            netRevenue += instructorCourseRevenue.getInstructorShare() * instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
+                            netRevenue += instructorCourseRevenue.getInstructorShare() * revenue.getTransaction().getUsdRate();
                         }
                     }
                 }
@@ -972,11 +966,9 @@ public class RevenueServiceImpl implements RevenueService {
 
     @Override
     public List<GetThreeMonthRevenueResponse> getInstructorRevenueReportForThreeMonth(GetInstructorMonthlyRevenueByMonthRequest getInstructorMonthlyRevenueByMonthRequest) {
-        // Get the authenticated user's username
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
 
-        // Retrieve the user's profile
         GeneralUserProfile profile = userProfileServiceImpl.getProfile(username);
         if (profile == null) {
             throw new ErrorException("User not found", VarList.RSP_NO_DATA_FOUND);
@@ -984,7 +976,6 @@ public class RevenueServiceImpl implements RevenueService {
         if (profile.getGupType().getId() != 3) {
             throw new ErrorException("Your are not an administrator", VarList.RSP_NO_DATA_FOUND);
         }
-        // Check if the user is active
         if (profile.getIsActive() != 1) {
             throw new ErrorException("User not active", VarList.RSP_NO_DATA_FOUND);
         }
@@ -997,16 +988,13 @@ public class RevenueServiceImpl implements RevenueService {
 
         GeneralUserProfile userProfile = generalUserProfileRepository.getGeneralUserProfileByUserCode(userCode);
 
-        // Retrieve the instructor profile
         InstructorProfile instructorProfile = instructorProfileRepository.getInstructorProfileByGeneralUserProfile(userProfile);
         if (instructorProfile == null) {
             throw new ErrorException("No such profile found", VarList.RSP_NO_DATA_FOUND);
         }
 
-        // Get the courses taught by the instructor
         List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
 
-        // Parse the input month into a LocalDate
         DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy");
         LocalDate startMonth;
         try {
@@ -1015,57 +1003,44 @@ public class RevenueServiceImpl implements RevenueService {
             throw new ErrorException("Invalid month format. Use 'MMMM yyyy'", VarList.RSP_ERROR);
         }
 
-        // Generate a list of the three months to calculate
         List<YearMonth> targetMonths = new ArrayList<>();
         targetMonths.add(YearMonth.from(startMonth));
         targetMonths.add(YearMonth.from(startMonth.minusMonths(1)));
         targetMonths.add(YearMonth.from(startMonth.minusMonths(2)));
 
-        // Initialize the response
         List<GetThreeMonthRevenueResponse> threeMonthRevenueResponses = new ArrayList<>();
 
-        // Iterate over the three months
         for (YearMonth yearMonth : targetMonths) {
-            // Map to hold revenue for each day of the month
             Map<Integer, Double> dailyRevenueMap = new HashMap<>();
 
-            // Initialize all days of the current month with zero revenue
             int daysInMonth = yearMonth.lengthOfMonth();
             for (int day = 1; day <= daysInMonth; day++) {
                 dailyRevenueMap.put(day, 0.00);
             }
 
-            // Iterate over the instructor's courses
             for (Course course : courses) {
                 List<OrderHasCourse> orderHasCourses = orderHasCourseRepository.getOrderHasCoursesByCourse(course);
 
-                // Process each order for the course
                 for (OrderHasCourse orderHasCourse : orderHasCourses) {
                     Revenue revenue = revenueRepository.getRevenueByOrderHasCourse(orderHasCourse);
 
-                    // Validate revenue and ensure it is not refunded
                     if (revenue != null && !revenue.isRefunded()) {
                         LocalDate createdLocalDate = convertToLocalDateViaInstant(revenue.getCreatedDate());
 
-                        // Check if the revenue falls within the current target month
                         if (YearMonth.from(createdLocalDate).equals(yearMonth)) {
-                            InstructorCourseRevenue instructorCourseRevenue =
-                                    instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
+                            InstructorCourseRevenue instructorCourseRevenue = instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
 
-                            // Calculate the earning for the day
-                            double earning = instructorCourseRevenue.getInstructorShare() *
-                                    instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
+                            double earning = instructorCourseRevenue.getInstructorShare() * revenue.getTransaction().getUsdRate();
+                            earning = Math.round(earning * 100.0) / 100.0;
 
-                            // Accumulate the revenue for the specific day
                             int dayOfMonth = createdLocalDate.getDayOfMonth();
-                            double previousEarnings = dailyRevenueMap.get(dayOfMonth); // Get the existing earnings for the day
-                            dailyRevenueMap.put(dayOfMonth, previousEarnings + earning); // Add the current earning
+                            double previousEarnings = dailyRevenueMap.get(dayOfMonth);
+                            dailyRevenueMap.put(dayOfMonth, previousEarnings + earning);
                         }
                     }
                 }
             }
 
-            // Prepare the day-wise revenue response for the current month
             List<GetMonthRevenueResponse> dayWiseRevenues = dailyRevenueMap.entrySet().stream()
                     .map(entry -> {
                         GetMonthRevenueResponse dayRevenueResponse = new GetMonthRevenueResponse();
@@ -1073,10 +1048,9 @@ public class RevenueServiceImpl implements RevenueService {
                         dayRevenueResponse.setRevenue(entry.getValue());
                         return dayRevenueResponse;
                     })
-                    .sorted(Comparator.comparingInt(GetMonthRevenueResponse::getDay)) // Sort by day
+                    .sorted(Comparator.comparingInt(GetMonthRevenueResponse::getDay))
                     .collect(Collectors.toList());
 
-            // Prepare the monthly response
             GetThreeMonthRevenueResponse monthRevenueResponse = new GetThreeMonthRevenueResponse();
             monthRevenueResponse.setMonth(yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
             monthRevenueResponse.setRevenues(dayWiseRevenues);
@@ -1089,11 +1063,9 @@ public class RevenueServiceImpl implements RevenueService {
 
     @Override
     public List<GetTwelveMonthRevenueResponse> getInstructorRevenueReportFortwelveMonth(GetInstructorMonthlyRevenueByMonthRequest getInstructorMonthlyRevenueByMonthRequest) {
-        // Get the authenticated user's username
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
 
-        // Retrieve the user's profile
         GeneralUserProfile profile = userProfileServiceImpl.getProfile(username);
         if (profile == null) {
             throw new ErrorException("User not found", VarList.RSP_NO_DATA_FOUND);
@@ -1101,7 +1073,6 @@ public class RevenueServiceImpl implements RevenueService {
         if (profile.getGupType().getId() != 3) {
             throw new ErrorException("Your are not an administrator", VarList.RSP_NO_DATA_FOUND);
         }
-        // Check if the user is active
         if (profile.getIsActive() != 1) {
             throw new ErrorException("User not active", VarList.RSP_NO_DATA_FOUND);
         }
@@ -1114,16 +1085,13 @@ public class RevenueServiceImpl implements RevenueService {
 
         GeneralUserProfile userProfile = generalUserProfileRepository.getGeneralUserProfileByUserCode(userCode);
 
-        // Retrieve the instructor profile
         InstructorProfile instructorProfile = instructorProfileRepository.getInstructorProfileByGeneralUserProfile(userProfile);
         if (instructorProfile == null) {
             throw new ErrorException("No such profile found", VarList.RSP_NO_DATA_FOUND);
         }
 
-        // Get the courses taught by the instructor
         List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
 
-        // Parse the input month into a LocalDate
         DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy");
         LocalDate startMonth;
         try {
@@ -1132,48 +1100,38 @@ public class RevenueServiceImpl implements RevenueService {
             throw new ErrorException("Invalid month format. Use 'MMMM yyyy'", VarList.RSP_ERROR);
         }
 
-        // Generate a list of the three months to calculate
         List<YearMonth> targetMonths = new ArrayList<>();
         targetMonths.add(YearMonth.from(startMonth));
         for (int i = 1; i < 12; i++) {
             targetMonths.add(YearMonth.from(startMonth.minusMonths(i)));
         }
 
-
-        // Initialize the response
         List<GetTwelveMonthRevenueResponse> getTwelveMonthRevenueResponses = new ArrayList<>();
         double totalMonthrevenue;
-        // Iterate over the three months
+
         for (YearMonth yearMonth : targetMonths) {
             totalMonthrevenue = 0.0;
-            // Iterate over the instructor's courses
             for (Course course : courses) {
                 List<OrderHasCourse> orderHasCourses = orderHasCourseRepository.getOrderHasCoursesByCourse(course);
 
-                // Process each order for the course
                 for (OrderHasCourse orderHasCourse : orderHasCourses) {
                     Revenue revenue = revenueRepository.getRevenueByOrderHasCourse(orderHasCourse);
 
-                    // Validate revenue and ensure it is not refunded
                     if (revenue != null && !revenue.isRefunded()) {
                         LocalDate createdLocalDate = convertToLocalDateViaInstant(revenue.getCreatedDate());
 
-                        // Check if the revenue falls within the current target month
                         if (YearMonth.from(createdLocalDate).equals(yearMonth)) {
-                            InstructorCourseRevenue instructorCourseRevenue =
-                                    instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
+                            InstructorCourseRevenue instructorCourseRevenue = instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
 
-                            // Calculate the earning for the day
-                            double earning = instructorCourseRevenue.getInstructorShare() *
-                                    instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
+                            double earning = instructorCourseRevenue.getInstructorShare() * revenue.getTransaction().getUsdRate();
+                            earning = Math.round(earning * 100.0) / 100.0;
+
                             totalMonthrevenue += earning;
-
                         }
                     }
                 }
             }
 
-            // Prepare the monthly response
             GetTwelveMonthRevenueResponse getTwelveMonthRevenueResponse = new GetTwelveMonthRevenueResponse();
             getTwelveMonthRevenueResponse.setMonth(yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
             getTwelveMonthRevenueResponse.setRevenue(totalMonthrevenue);
@@ -1186,11 +1144,9 @@ public class RevenueServiceImpl implements RevenueService {
 
     @Override
     public GetInstructorRevenueForMonthByTodayResponse getInstructorRevenueForMonthByToday(GetInstructorRevenueForMonthByTodayRequest getInstructorRevenueForMonthByTodayRequest) {
-        // Get the authenticated user's username
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
 
-        // Retrieve the user's profile
         GeneralUserProfile profile = userProfileServiceImpl.getProfile(username);
         if (profile == null) {
             throw new ErrorException("User not found", VarList.RSP_NO_DATA_FOUND);
@@ -1198,7 +1154,6 @@ public class RevenueServiceImpl implements RevenueService {
         if (profile.getGupType().getId() != 3) {
             throw new ErrorException("Your are not an administrator", VarList.RSP_NO_DATA_FOUND);
         }
-        // Check if the user is active
         if (profile.getIsActive() != 1) {
             throw new ErrorException("User not active", VarList.RSP_NO_DATA_FOUND);
         }
@@ -1209,7 +1164,6 @@ public class RevenueServiceImpl implements RevenueService {
 
         GeneralUserProfile userProfile = generalUserProfileRepository.getGeneralUserProfileByUserCode(userCode);
 
-        // Retrieve the instructor profile
         InstructorProfile instructorProfile = instructorProfileRepository.getInstructorProfileByGeneralUserProfile(userProfile);
         if (instructorProfile == null) {
             throw new ErrorException("No such profile found", VarList.RSP_NO_DATA_FOUND);
@@ -1218,7 +1172,6 @@ public class RevenueServiceImpl implements RevenueService {
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(30);
 
-        // Get the courses taught by the instructor
         List<Course> courses = courseRepository.getCourseByInstructorId(instructorProfile);
         int daysInRange = (int) ChronoUnit.DAYS.between(startDate, today) + 1;
         int[] days = new int[daysInRange];
@@ -1227,7 +1180,7 @@ public class RevenueServiceImpl implements RevenueService {
         for (int i = 0; i < daysInRange; i++) {
             LocalDate date = today.minusDays(i);
 
-            days[i] = date.getDayOfMonth(); // Use the actual day of the month
+            days[i] = date.getDayOfMonth();
             revenue[i] = calculateRevenueForDay(courses, date);
         }
         reverseArray(days);
@@ -1262,22 +1215,16 @@ public class RevenueServiceImpl implements RevenueService {
         for (Course course : courses) {
             List<OrderHasCourse> orderHasCourses = orderHasCourseRepository.getOrderHasCoursesByCourse(course);
 
-            // Process each order for the course
             for (OrderHasCourse orderHasCourse : orderHasCourses) {
                 Revenue revenue = revenueRepository.getRevenueByOrderHasCourse(orderHasCourse);
 
-                // Validate revenue and ensure it is not refunded
                 if (revenue != null && !revenue.isRefunded()) {
                     LocalDate createdLocalDate = convertToLocalDateViaInstant(revenue.getCreatedDate());
 
-                    // Check if the revenue falls on the specific date
                     if (createdLocalDate.equals(date)) {
-                        InstructorCourseRevenue instructorCourseRevenue =
-                                instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
+                        InstructorCourseRevenue instructorCourseRevenue = instructorCourseRevenueRepository.getInstructorCourseRevenueByRevenue(revenue);
 
-                        // Calculate the earning for the day
-                        double earning = instructorCourseRevenue.getInstructorShare() *
-                                instructorCourseRevenue.getRevenue().getTransaction().getUsdRate();
+                        double earning = instructorCourseRevenue.getInstructorShare() * revenue.getTransaction().getUsdRate();
                         dailyRevenue += earning;
                     }
                 }

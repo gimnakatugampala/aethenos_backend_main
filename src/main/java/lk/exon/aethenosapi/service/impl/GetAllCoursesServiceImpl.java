@@ -1067,14 +1067,14 @@ public class GetAllCoursesServiceImpl implements GetAllCoursesService {
         int studentCount = 0;
 
         Map<String, Integer> courseStudentCounts = new HashMap<>();
-        courseStudentCounts.put("1afabb42-d9d5-44a1-abf1-9bc4917e5e44", orderHasCourses.size() + 11039);
+        courseStudentCounts.put("1afabb42-d9d5-44a1-abf1-9bc4917e5e44", orderHasCourses.size() + 11592);
         courseStudentCounts.put("90c1e353-358d-46fb-b6c4-8c57007245ea", orderHasCourses.size() + 574);
         courseStudentCounts.put("e819dea8-cd7f-4eb4-b1b4-e8db6fc63c87", orderHasCourses.size() + 551);
         courseStudentCounts.put("bf2f01d3-9ef7-4c91-973d-2debdd2e5aaa", orderHasCourses.size() + 548);
         courseStudentCounts.put("dc4ffca5-41ae-4b35-a778-d530a4a68aa6", orderHasCourses.size() + 537);
         courseStudentCounts.put("51bd9e0d-49b3-4004-8413-81f5fed53dd2", orderHasCourses.size() + 565);
-        courseStudentCounts.put("9d93acf7-5543-45fb-9f18-c3e57b5fbe69", orderHasCourses.size() + 11864);
-        courseStudentCounts.put("0769d057-797d-475c-84ba-c11fd6651c04", orderHasCourses.size() + 11755);
+        courseStudentCounts.put("9d93acf7-5543-45fb-9f18-c3e57b5fbe69", orderHasCourses.size() + 12145);
+        courseStudentCounts.put("0769d057-797d-475c-84ba-c11fd6651c04", orderHasCourses.size() + 12364);
 
         studentCount = courseStudentCounts.getOrDefault(courseCode, orderHasCourses.size());
 
