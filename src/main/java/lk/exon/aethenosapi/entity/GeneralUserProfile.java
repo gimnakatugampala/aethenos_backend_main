@@ -52,4 +52,7 @@ public class GeneralUserProfile {
     @Column(name = "country")
     private String country;
 
+    @Column(name = "is_synthetic")
+    private Byte isSynthetic;
+
 }

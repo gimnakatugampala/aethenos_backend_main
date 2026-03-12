@@ -13,4 +13,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     List<Order> getOrdersByGeneralUserProfile(GeneralUserProfile profile);
     Order getOrderById(int id);
+
+    List<Order> findAllByGeneralUserProfile(GeneralUserProfile gup);
 }
